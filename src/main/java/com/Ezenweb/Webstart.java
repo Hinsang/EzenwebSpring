@@ -12,12 +12,16 @@ public class Webstart {
     }
 }
 
-
 /*
 
     1. extend : 상속 [ 설계도 물려받는다. 1개만 가능 ]
     2. @ 어노테이션 [ 빌드[실행] 할때 자동 코드 실행 / 여러개 가능 ]
         1. 내장 : @override : 상속 메소드 재정의할때
         2. 메타 :
+
+            1. @SpringBootAplication : 컴포넌트 스캔
+                컴포넌ㄴ트 스캔 빈[스프링 메모리] 등록
+                    1. @Controller
+                    2. @RestController
 
 */
