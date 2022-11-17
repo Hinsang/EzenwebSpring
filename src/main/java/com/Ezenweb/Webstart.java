@@ -12,6 +12,7 @@ public class Webstart {
     }
 }
 
+
 /*
 
     1. extend : 상속 [ 설계도 물려받는다. 1개만 가능 ]
