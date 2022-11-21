@@ -27,10 +27,26 @@ public class MemberService {
     @Autowired
     private JavaMailSender javaMailSender;          // 메일전송 객체
 
-    // -------------------------------- 서비스 메소드 --------------------------//
+
+// -------------------------------- 서비스 메소드 --------------------------//
+
+    // * 로그인된 엔티티 호출
+    public MemberEntity getEntity(){
+        // 1. 로그인 정보 확인[ 세션 = loginMno ]
+        Object object = request.getSession().getAttribute("loginMno");
+        if( object == null ) { return null; }
+        // 2. 로그인된 회원번호
+        int mno = (Integer)object;
+        // 3. 회원번호 --> 회원정보 호출
+        Optional<MemberEntity> optional =  memberRepository.findById(mno);
+        if( !optional.isPresent() ){ return null; }
+        // 4. 로그인된 회원의 엔티티
+        return optional.get();
+    }
+
     // 1. 회원가입
     @Transactional
-    public int setmember( MemberDto memberDto ){
+    public int setmember(MemberDto memberDto ){
         // 1. DAO 처리 [ insert ]
         MemberEntity entity = memberRepository.save( memberDto.toEntity() );
         // memberRepository.save( 엔티티 객체 ) : 해당 엔티티 객체가 insert 생성된 엔티티객체 반환
@@ -39,7 +55,7 @@ public class MemberService {
     }
     // 2. 로그인
     @Transactional
-    public int getmember( MemberDto memberDto ){
+    public int getmember(MemberDto memberDto ){
         // 1. Dao 처리 [ select ]
         // 1. 모든 엔티티=레코드 호출 [ select * from member ]
         List<MemberEntity> entityList = memberRepository.findAll();
@@ -126,10 +142,9 @@ public class MemberService {
         else{ return 0; }
     }
     // 7. 로그아웃
-    public boolean getlogout(){
+    public void logout(){
         // 기본 세션명의 세션데이터를 null
         request.getSession().setAttribute("loginMno" , null );
-        return true;
     }
 
     // 8. 회원목록 서비스
@@ -147,14 +162,13 @@ public class MemberService {
 
     // 9. 인증코드 발송
     public String getauth( String toemail ){
+        String auth = "";
+        String html = "<html><body><h1> EZENWEB 회원 가입 이메일 인증코드 입니다 </h1> ";
 
-        String auth = ""; // 인증코드
-        String html = "<html><body><h1> EZENWEB 회원 가입 이메일 인증코드 입니다. </h1>";
-
-        Random random = new Random();
-        for(int i = 0 ; i<6 ; i++) {
-            char randchar = (char)(random.nextInt(26)+97); // 97~122 : 알파벳 소문자
-            //char randchar = (char)random.nextInt(10)+48; // 48~57 : 0~9
+        Random random = new Random();   // 1. 난수 객체
+        for( int i = 0 ; i<6 ; i++ ){   // 2. 6 회전
+            char randchar = (char)(random.nextInt(26)+97);  // 97 ~ 122 : 알파벳 소문자
+            //char randchar = (char)(random.nextInt(10)+48);  // 48 ~ 57 : 0 ~ 9
             auth += randchar;
         }
         html += "<div>인증코드 : "+auth+"</div>";
@@ -168,7 +182,7 @@ public class MemberService {
             MimeMessage message = javaMailSender.createMimeMessage(); // 1. Mime 프로토콜 객체 생성
             // 2. MimeHelper 설정 객체 생성  new MimeMessageHelper( mime객체명 , 첨부파일여부 , 인코딩타입 )
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper( message, true, "utf-8");
-            mimeMessageHelper.setFrom("star4381@naver.com", "star4381"); // 3. 보내는사람 정보
+            mimeMessageHelper.setFrom("kgs2072@naver.com", "Ezenweb"); // 3. 보내는사람 정보
             mimeMessageHelper.setTo(toemail);  // 4. 받는 사람
             mimeMessageHelper.setSubject(title); // 5. 메일 제목
             mimeMessageHelper.setText(content.toString(), true); // HTML 형식  // 6. 메일 내용

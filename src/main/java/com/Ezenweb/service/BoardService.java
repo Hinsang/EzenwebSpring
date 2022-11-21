@@ -1,30 +1,36 @@
 package com.Ezenweb.service;
 
+import com.Ezenweb.domain.dto.BcategoryDto;
 import com.Ezenweb.domain.dto.BoardDto;
+import com.Ezenweb.domain.entity.bcategory.BcategoryEntity;
+import com.Ezenweb.domain.entity.bcategory.BcategoryRepository;
 import com.Ezenweb.domain.entity.board.BoardEntity;
 import com.Ezenweb.domain.entity.board.BoardRepository;
 import com.Ezenweb.domain.entity.member.MemberEntity;
 import com.Ezenweb.domain.entity.member.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@Service // 컴포넌트 [ Spring MVC ]
+@Service
 public class BoardService {
-
+    // ------------1.전역변수---------------//
     @Autowired
     private HttpServletRequest request; // 요청 객체 선언
-
     @Autowired
-    private MemberRepository memberRepository; // 회원 레파지토리 객체 선언
-
+    private MemberRepository memberRepository; // 회원 리포지토리 객체 선언
     @Autowired
-    private BoardRepository boardRepository; // 게시물 레파지토리 객체 선언
+    private MemberService memberService;
+    @Autowired
+    private BoardRepository boardRepository;// 게시물 리포지토리 객체 선언
+    @Autowired
+    private BcategoryRepository bcategoryRepository;
+
     // @Transactional : 엔티티 DML 적용 할때 사용되는 어노테이션
     // 1. 메소드
             /*
@@ -34,95 +40,110 @@ public class BoardService {
                 4. delete : boardRepository.delete( 삭제할엔티티 )
              */
     // ------------ 2. 서비스 ------------- //
+
     // 1. 게시물 쓰기
     @Transactional
-    public boolean setboard( BoardDto boardDto ) {
-        // 1. dto --> entity [ INSERT ] 저장된 entity 반환
-        // 위의 소문자 boarDto는 힙주소 영역이면서 객체
+    public boolean setboard( BoardDto boardDto ){
+        // ---------- 로그인 회원 찾기 메소드 실행 --> 회원엔티티 검색 --------------  //
+        MemberEntity memberEntity = memberService.getEntity();
+        if( memberEntity == null ){ return false; }
+        // ---------------------------- //
+        // ------------ 선택한 카테고리 번호 --> 카테고리 엔티티 검색 --------------  //
+        Optional<BcategoryEntity> optional = bcategoryRepository.findById( boardDto.getBcno() );
+        if ( !optional.isPresent()) { return false;}
+        BcategoryEntity bcategoryEntity = optional.get();
+        // --------------------------  //
+        BoardEntity boardEntity  = boardRepository.save( boardDto.toEntity() );  // 1. dto --> entity [ INSERT ] 저장된 entity 반환
+        if( boardEntity.getBno() != 0 ){   // 2. 생성된 entity의 게시물번호가 0 이 아니면  성공
+            // 1. 회원 <---> 게시물 연관관계 대입
+            boardEntity.setMemberEntity( memberEntity ); // ***!!!! 5. fk 대입
+            memberEntity.getBoardEntityList().add( boardEntity); // *** 양방향 [ pk필드에 fk 연결 ]
+            // 2. 카테고리 <---> 게시물 연관관계 대입
+            boardEntity.setBcategoryEntity( bcategoryEntity );
+            bcategoryEntity.getBoardEntityList().add( boardEntity );
 
-        // 1. 로그인 정보 확인 [ 세션 = loginMno ]
-        Object object = request.getSession().getAttribute("loginMno");
-        if(object == null) {
-            return false;
-        }
-        // 2. 로그인된 회원번호
-        int mno = (Integer)object;
-        // 3. 회원번호 --> 회원정보 호출
-        Optional<MemberEntity> optional = memberRepository.findById(mno);
-        if(!optional.isPresent()) {
-            return false;
-        }
-        // 4. 로그인된 회원의 엔티티
-        MemberEntity memberEntity = optional.get();
-
-        BoardEntity boardEntity = boardRepository.save( boardDto.toEntity() );
-        // 클래스명.메소드명(); // 설계도 // 메소드가 static일 경우 가능
-        // 객체명.메소드명();
-
-        // 2. 생성된 entity의 게시물번호가 0이 아니면 성공
-        if(boardEntity.getBno() != 0) {
-            boardEntity.setMemberEntity(memberEntity);
-            memberEntity.getBoardEntityList().add( boardEntity );
             return true;
-        } else {
-            return false;
         }
+        else{ return false; } // 2. 0 이면 entity 생성 실패
     }
     // 2. 게시물 목록 조회
     @Transactional
-    public List<BoardDto> boardlist() {
-        // 1. 모든 엔티티 호출한다.
-        List<BoardEntity> elist = boardRepository.findAll();
-        // 2. 컨트롤에게 전달할때 형변환[ entity -> dto ] : 역할이 달라서
-        List<BoardDto> dlist = new ArrayList<>();
-        // 3. 형변환
-        for( BoardEntity entity : elist ) {
-            dlist.add(entity.toDto());
+    public List<BoardDto> boardlist(int bcno){
+        List<BoardEntity> elist =  null; // if 밖에서도 쓰기 위해
+        if( bcno == 0 ) {
+            elist = boardRepository.findAll(); // 카테고리번호가 0 이면 전체보기
+        } else {    // 카테고리번호가 0이 아니면 선택된 카테고리별 보기
+            BcategoryEntity bcEntity = bcategoryRepository.findById(bcno).get();
+            elist = bcEntity.getBoardEntityList();
         }
-        // 4. 변환된 리스트 dist 반환
-        return dlist;
+        List<BoardDto> dlist = new ArrayList<>(); // 2. 컨트롤에게 전달할때 형변환[ entity->dto ] : 역할이 달라서
+        for( BoardEntity entity : elist ){ // 3. 변환
+            dlist.add( entity.toDto() );
+        }
+        return dlist;  // 4. 변환된 리스트 dist 반환
     }
     // 3. 게시물 개별 조회
     @Transactional
-    public BoardDto getboard( int bno ) {
-        // 1. 입력받은 게시물번호로 엔티티 검색
-        Optional<BoardEntity> optional = boardRepository.findById(bno);
-        // 2. Optional 안에 있는 내용물 확인 .isPresent()
-        if(optional.isPresent()) {
+    public BoardDto getboard( int bno ){
+        Optional< BoardEntity > optional = boardRepository.findById(bno); // 1. 입력받은 게시물번호로 엔티티 검색 [ Optional]
+        if( optional.isPresent() ){// 2. Optional 안에 있는 내용물 확인 .isPresent()
             BoardEntity boardEntity = optional.get(); // 3. 엔티티 꺼내기 .get();
-            return boardEntity.toDto(); // 4. 형변환 반환
-        } else {
+            return boardEntity.toDto(); // 4.형변환 반환
+        }else{
             return null; // 4. 없으면 null
         }
     }
     // 4. 게시물 삭제
     @Transactional
-    public boolean delboard( int bno ) {
-        Optional<BoardEntity> optional = boardRepository.findById(bno);
-        if(optional.isPresent()) {
-            BoardEntity entity = optional.get();
-            boardRepository.delete(entity); // 찾은 엔티티를 삭제한다.
+    public boolean delboard( int bno ){
+        Optional<BoardEntity> optional = boardRepository.findById( bno);
+        if( optional.isPresent() ){
+            BoardEntity entity =  optional.get();
+            boardRepository.delete( entity ); // 찾은 엔티티를 삭제한다.
             return true;
-        } else {
-            return false;
-        }
+        }else{ return false; }
     }
-    // 5. 게시물 수정 [ 첨부 파일 ]
+    // 5. 게시물 수정 [ 첨부파일 ]
     @Transactional
-    public boolean upboard( BoardDto boardDto ) {
-        // 1. DTO 수정할 Pk번호 이용한 엔티티 찾기
-        Optional<BoardEntity> optional = boardRepository.findById(boardDto.getBno());
-        // 2.
-        if( optional.isPresent() ) {
+    public boolean upboard( BoardDto boardDto){
+        // 1. DTO에서 수정할 PK번호 이용해서 엔티티 찾기
+        Optional<BoardEntity> optional = boardRepository.findById( boardDto.getBno() );
+        if( optional.isPresent() ){  // 2.
             BoardEntity entity = optional.get();
-            // 수정처리 [ 메소드 별도 존재x 엔티티 <--매핑--> 레코드 / 엔티티 객체 자체를 수정 : @Transactional (수정은 별도의 메소드가 없기때문에 필수) ]
-            entity.setBtitle(boardDto.getBtitle());
-            entity.setBcontent(boardDto.getBcontent());
-            entity.setBfile(boardDto.getBfile());
+            // * 수정처리 [ 메소드 별도 존재x /  엔티티 객체 <--매핑--> 레코드 / 엔티티 객체 필드를 수정 : @Transactional ]
+            entity.setBtitle( boardDto.getBtitle() );
+            entity.setBcontent( boardDto.getBcontent()) ;
+            entity.setBfile( boardDto.getBfile() );
             return true;
-        } else {
-            return false;
-        }
+        }else{  return false;  }
     }
-
+    // 6. 카테고리 등록
+    public boolean setbcategory( BcategoryDto bcategoryDto ){
+        BcategoryEntity entity =  bcategoryRepository.save( bcategoryDto.toEntity() );
+        if( entity.getBcno() != 0 ){ return  true;}
+        else{ return false; }
+    }
+    // 7. 모든 카테고리 출력
+    public List<BcategoryDto> bcategorylist(){
+        // DB에서 일치하는 엔티티 리스트 가져와서 저장
+        List<BcategoryEntity> entityList =  bcategoryRepository.findAll();
+        // dto리스트 객체 생성
+        List<BcategoryDto> dtolist = new ArrayList<>();
+        // 엔티티리스트를 반복문을 돌려서 dtolist에 엔티티안에 dto 변환 메소드를 추가함
+        entityList.forEach( e -> dtolist.add( e.toDto() ) );
+        // dto 리스트 반환
+        return dtolist;
+    }
 }
+/*
+        // 1. 리스트를 순회하는 방법 3가지 [
+        // 화살표함수[람다식표현] js : ( 인수 )  => { 실행코드 }    java : 인수 -> { 실행코드 }
+        for( int i = 0 ; i < entityList.size(); i++ ){
+            BcategoryEntity e =  entityList.get(i);
+            System.out.println( e.toString() );
+        }
+        for ( BcategoryEntity e : entityList ){
+            System.out.println( e.toString() );
+        }
+        entityList.forEach( e -> e.toString()  );
+ */

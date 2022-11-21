@@ -17,7 +17,7 @@ public class BoardDto {
     private int bview;          // 조회수
     private String bfile;       // 첨부파일
     private int mno;            // 작성자 [ 회원번호-fk ]
-    private int bcno;            // 카테고리 [ 카테고리-fk ]
+    private int bcno;           // 카테고리 [ 카테고리-fk ]
     private String memail;      // 회원아이디
 
     public BoardDto(int anInt, String string, String string1) {
