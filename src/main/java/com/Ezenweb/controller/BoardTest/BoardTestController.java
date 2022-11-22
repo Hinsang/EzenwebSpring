@@ -31,4 +31,19 @@ public class BoardTestController {
         return boardTestService.setboard(btDto);
     }
 
+    @GetMapping("/boardlist")
+    public List<BtDto> boardlist(@RequestParam int btcno) {
+        return boardTestService.boardlist(btcno);
+    }
+
+    @PutMapping("/setupdate")
+    public boolean setupdate(@RequestBody BtDto btDto) {
+        return boardTestService.setupdate(btDto);
+    }
+
+    @DeleteMapping("/setdelete")
+    public boolean setdelete(@RequestParam("btno") int btno) {
+        return boardTestService.setdelete(btno);
+    }
+
 }

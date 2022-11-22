@@ -80,7 +80,7 @@ public class BoardService {
         for( BoardEntity entity : elist ){ // 3. 변환
             dlist.add( entity.toDto() );
         }
-        return dlist;  // 4. 변환된 리스트 dist 반환
+        return dlist;  // 4. 변환된 리스트 dlist 반환
     }
     // 3. 게시물 개별 조회
     @Transactional

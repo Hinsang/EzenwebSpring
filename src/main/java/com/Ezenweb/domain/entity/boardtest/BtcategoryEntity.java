@@ -21,6 +21,7 @@ public class BtcategoryEntity {
     int btcno;
     String btcname;
 
+    // 서로 엔티티 간의 관계를 나타내는 메소드
     @OneToMany(mappedBy = "btcategoryEntity")
     //@Builder.Default // 빌더 사용시 메모리 할당
     @ToString.Exclude

@@ -93,7 +93,7 @@ function categorylist(){
         url : "/boardtest/categorylist",
         type : "get",
         success : function(re){
-            let html = "";
+            let html = "<button onclick='btcchange(0)'>전체보기</button>";
             re.forEach( c =>{
                 html += '<button type="button" onclick="btcchange('+c.btcno+')">'+c.btcname+'</button>';
             })
@@ -102,11 +102,16 @@ function categorylist(){
     })
 }
 
-let cno = 1;
+let cno = 0;
 // 카테고리 번호 변경
 function btcchange(btcno) {
     cno = btcno
-    alert(cno + '번 카테고리 변경')
+    if(btcno == 0) {
+        alert('전체보기!!')
+    } else {
+        alert(cno + '번 카테고리 변경')
+    }
+    boardlist()
 }
 
 // 비회원제 글 생성
@@ -123,7 +128,109 @@ function setboard() {
         type : "post",
         contentType : "application/json",
         success : function(re) {
-            alert(re)
+            if(re == true) {
+                alert("글 등록성공!!")
+                window.location.reload()
+            } else {
+                alert("카테고리를 선택해주세요!!")
+                window.location.reload()
+            }
+        }
+    })
+}
+
+boardlist()
+// 카테고리별 글 조회
+function boardlist() {
+    $.ajax({
+        url : "/boardtest/boardlist",
+        data : { "btcno" : cno },
+        success : function(list) {
+            console.log(list)
+            let html = "<br>"
+
+            for(let i = 0 ; i<list.length ; i++) {
+                let b = list[i]
+                html += `
+                            <tr>
+                                <td>${b.btno}</td>
+                                <td>${b.btname}</td>
+                                <td>${b.btcontent}&nbsp;</td>
+                                <td><button type="button" onclick="updateform(${b.btno})">수정</button></td>
+                                <td><button type="button" onclick="setdelete(${b.btno})">삭제</button></td>
+                            </tr>
+                            <tr class="updateform${b.btno}"></tr>
+                        `
+            }
+
+            document.querySelector(".btable").innerHTML = html
+        }
+    })
+}
+let formOn = false;
+// 수정 폼 생성
+function updateform(btno) {
+    if(formOn == false) {
+        document.querySelector(".updateform"+btno+"").innerHTML
+        = `
+            <td colspan="5" style="padding-bottom: 10px;">
+                제목<br>
+                <input type="text" id="updatetitle(${btno})" style="width: 100%;"><br>
+                내용<input type="text" id="updatecontent(${btno})" style="width: 100%; height: 50px;"><br>
+                <button type="button" onclick="setupdate(${btno})">수정완료</button>
+            </td>
+        `
+        formOn = true;
+    } else {
+        document.querySelector(".updateform"+btno+"").innerHTML
+                = ""
+        formOn = false;
+    }
+}
+
+
+// 글 수정
+function setupdate(btno) {
+
+    alert(btno)
+    let data = {
+        btno : btno,
+        btname : document.getElementById("updatetitle("+btno+")").value,
+        btcontent : document.getElementById("updatecontent("+btno+")").value
+    }
+
+    $.ajax({
+        url : "/boardtest/setupdate",
+        data : JSON.stringify(data),
+        type : "put",
+        contentType : "application/json",
+        success : function (re) {
+            if(re == true) {
+                alert("수정성공!!")
+                window.location.reload()
+            } else {
+                alert("수정실패!!")
+                window.location.reload()
+            }
+        }
+    })
+
+}
+
+// 글 삭제
+function setdelete(btno) {
+    $.ajax({
+        url : "/boardtest/setdelete",
+        data : {"btno" : btno},
+        type : "delete",
+        success : function (re) {
+            if(re == true) {
+                alert("삭제성공!!")
+                window.location.reload()
+            } else {
+                alert("삭제실패!!")
+                window.location.reload()
+            }
         }
     })
 }
