@@ -1,19 +1,25 @@
 // -------------- 전역변수 -----------------//
 let bcno = 2; // 카테고리 번호   // 카테고리 기본값
 
-// 1. 게시물 등록 메소드
-function setboard(){
-    let data = {
+/*let data = {
         btitle : document.querySelector('.btitle').value ,
         bcontent : document.querySelector('.bcontent').value,
         bfile : document.querySelector('.bfile').value,
         bcno : bcno
-    }
-    $.ajax({
+    }*/
+
+// 1. 게시물 등록 메소드
+function setboard(){
+    let boardform = document.querySelector('.boardform')
+    let formdata = new FormData(boardform)
+    formdata.set("bcno", bcno) // 폼 데이터에 데이터 추가
+    $.ajax({ // http 사용하는 jquery 비동기통신 함수
         url : "/board/setboard",
-        type : "post",
-        data : JSON.stringify(data) ,
-        contentType : "application/json",
+        type : "post",  // Multipart 전송 방법
+        data : formdata,
+        // Content-Type : multipart/formed-data
+        contentType : false,
+        processData : false,
         success : function(re) {
             if( re == true ){
                 alert('글작성성공');
