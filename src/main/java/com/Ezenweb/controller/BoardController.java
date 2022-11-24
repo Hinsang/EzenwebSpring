@@ -41,7 +41,7 @@ public class BoardController {
     }
 
     // 4. 게시물수정 페이지 열기
-    @GetMapping("/update")
+    @PutMapping("/update")
     public Resource getupdate() {
         return new ClassPathResource("templates/board/update.html");
     }
@@ -82,7 +82,7 @@ public class BoardController {
 
     // 5. 게시물 수정 [ 첨부파일 ]
     @PutMapping("/upboard")
-    public boolean upboard(@RequestBody BoardDto boardDto) {
+    public boolean upboard(BoardDto boardDto) {
         return boardService.upboard(boardDto);
     }
 

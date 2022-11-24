@@ -1,7 +1,7 @@
 getloginMno()
 function getloginMno() {
     $.ajax({
-        url : "member/getloginMno",
+        url : "/member/getloginMno",
         type : "get",
         success : function (re) {
 

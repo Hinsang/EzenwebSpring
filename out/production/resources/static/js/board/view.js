@@ -8,7 +8,19 @@ function getboard() {
         type : "get",
         data : { "bno" : bno },
         success : function(re) {
-            console.log(re)
+        console.log(re.bfilename)
+            let html = `
+                <div>글번호 : ${re.bno}</div>
+                <div>제목 : ${re.btitle}</div>
+                <div>내용 : ${re.bcontent}</div>
+                <div>첨부파일명 : ${re.bfilename}</div>
+            `
+            document.querySelector(".detail").innerHTML = html
+
+            if(re.bfilename !== null) {
+                let filelink = `<a href="../board/filedownload?filename=${re.bfilename}">${re.bfilename}</a>`
+                document.querySelector('.bfile').innerHTML = filelink
+            }
         }
     })
 }

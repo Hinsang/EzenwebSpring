@@ -6,6 +6,7 @@ function boardlist(){
     $.ajax({
         url : "/board/boardlist",
         type : "get",
+        async : false,
         data : { "bcno" : bcno },   // bcno : 카테고리번호
         success : function(list) {
             let html = '<tr>  <th> 번호 </th> <th> 제목 </th> <th> 작성자 </th></tr>';

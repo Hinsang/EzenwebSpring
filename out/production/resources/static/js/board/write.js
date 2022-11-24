@@ -1,3 +1,23 @@
+
+getloginMno()
+function getloginMno() {
+    $.ajax({
+        url : "/member/getloginMno",
+        type : "get",
+        success : function (re) {
+
+            alert(re)
+            let headerbox = '';
+            if( re == "0" ) {
+                alert("로그인해주세요")
+                window.location.href="/";
+            } else {
+
+            }
+        }
+    })
+}
+
 // -------------- 전역변수 -----------------//
 let bcno = 2; // 카테고리 번호   // 카테고리 기본값
 
@@ -34,6 +54,7 @@ function setbcategory(){
     let data = { bcname : document.querySelector(".bcname").value }
     $.ajax({
         url : "/board/setbcategory" , type : "post",
+        async : false,
         data : JSON.stringify(data), contentType : "application/json",
         success : function(re) {
             if( re == true ){ alert('카테고리추가성공'); bcategorylist();}
@@ -58,8 +79,6 @@ function bcategorylist(){
 }
 // 4. 카테고리 버튼을 클릭했을때 선택된 카테고리 번호 대입
 function bcnochage( cno ){ bcno = cno; alert( bcno+"의 카테고리 선택");  }
-
-
 
 
 
